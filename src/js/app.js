@@ -1,61 +1,57 @@
-//- app:     Omniscient-ToDo-app
+//- app:     React-Baobab-ToDo-App
 //- author:  @djidja8
 //- version: v0.1
-//
 'use strict'
-var React     = require('react'),
-    immstruct = require('immstruct'),
-    component = require('omniscient')
+var React  = require('react')
+var Baobab = require('baobab')
 
-//-- todo app
-//
-var app = function() {
-  var struct = immstruct({ items: [{checked: false, archived: false, text: 'Buy milk'}]})
-
-  return {
-    start(render) {
-      struct.on('swap', render)
-      render()
-    },
-    model() {
-      return struct.cursor('items')}
-    }
-}()
+var nextId = 0
+var data = new Baobab({ todos: [{id: nextId++, checked: false, archived: false, text: 'Buy milk'}]})
+var todosCursor = data.select('todos')
 
 //-- todo component
-//
-var todoMixins = {
+var Todo = React.createClass({
+  mixins: [todosCursor.mixin],
+
   onToggled() {
-    this.props.todo.update('checked', state => !state)
+    // this.props.todo.checked = !this.props.todo.checked
   },
   onDestroy() {
-    this.props.todo.set('archived', true);
-  }
-}
-var Todo = component(todoMixins, function() {
+    // this.props.todo.edit({'archived': true})
+  },
+  render() {
     return (
-       <li id="todo-list" className={this.props.todo.get('checked') && 'completed'}>
-        <div className="view">
+      <div key={this.props.todo.text} className="view">
+         <li id="todo-list" className={this.props.todo.checked && 'completed'}>
           <input className="toggle"
                  type="checkbox"
                  onChange={this.onToggled}
-                 checked={this.props.todo.get('checked')}/>
-          <label> {this.props.todo.get('text')} </label>
+                 checked={this.props.todo.checked}/>
+          <label> {this.props.todo.text} </label>
           <button className="destroy" onClick={this.onDestroy}/>
-        </div>
-      </li>
-    )}
-)
+        </li>
+      </div>
+    )
+  }
+})
 
 //-- todolist component
-//
-var todoListMixins = {
+var TodoList = React.createClass({
+  mixins: [todosCursor.mixin],
+
   onToggled() {
     this.refs.toggleAll.checked = !this.refs.toggleAll.checked
-    this.props.todolist.forEach(i => i.update('checked', () => this.refs.toggleAll.checked))
-  }
-}
-var TodoList = component(todoListMixins, function() {
+    this.cursor.get().forEach(i => i.update('checked', () => this.refs.toggleAll.checked))
+  },
+
+  renderTodo(todo) {
+    console.log(todo)
+    var todoCursor = todo.id ? todosCursor.select(todo.id.toString()) : {id: nextId++, checked: false, archived: false, text: '?'}
+    console.log(todoCursor)
+    return todo.archived ? '' : <Todo key={todo.id} todo={todoCursor}/>
+  },
+
+  render() {
     return (
         <section id="main">
           <input id="toggle-all" type="checkbox"
@@ -63,37 +59,35 @@ var TodoList = component(todoListMixins, function() {
                                  onChange={this.onToggled}
                                  ref="toggleAll"/>
           <ul id="todo-list">
-            {
-              this.props.todolist.map((i, indx) =>
-                i.get('archived') ? '' : <Todo key={indx} todo={i}/>).toArray()
-            }
+            {this.cursor.get().map(this.renderTodo)}
           </ul>
         </section>
-    )}
-)
+    )
+  }
+})
 
 //-- main component
-//
-var mainMixins = {
+var Main = React.createClass({
+  mixins: [todosCursor.mixin],
+
   onAdded(event) {
     if (event.key === 'Enter') {
       var val = this.refs.text.getDOMNode().value.trim()
       if (val) {
-        this.props.model.update(items => items.push(
-                                   immstruct({checked: false, archived: false, text: val})
-                                   .current))
+        this.cursor.push({id: nextId++, checked: false, archived: false, text: val})
         this.refs.text.getDOMNode().value = ''
       }
     }
   },
   clearCompleted() {
-    this.props.model.update(items => items.filter(i => !i.get('checked')))
+    this.cursor.get().edit(todos => todos.filter(i => !i.get('checked')))
   },
   itemsLeft() {
-    return this.props.model.count(i => !i.get('checked') && !i.get('archived'))
-  }
-}
-var Main = component(mainMixins, function() {
+    // return this.cursor.get().count(i => !i.get('checked') && !i.get('archived'))
+    return 100
+  },
+
+  render() {
     return (
       <div id="todoapp">
         <header id="header">
@@ -104,11 +98,11 @@ var Main = component(mainMixins, function() {
                                            ref="text"/>
         </header>
 
-        { <TodoList todolist={this.props.model}/> }
+        { <TodoList/> }
 
         <footer id="footer">
           <span id="todo-count">
-            <strong> {this.itemsLeft()} items left </strong>
+            <strong> {this.itemsLeft()} todos left </strong>
           </span>
           <ul id="filters">
             <li><a className="selected" href="#/"> All </a></li>
@@ -118,16 +112,17 @@ var Main = component(mainMixins, function() {
           <button id="clear-completed" onClick={this.clearCompleted}> Clear Completed </button>
           <div id="info">
             <p>Using <a href="https://facebook.github.io/react/" target="_blank">ReactJS</a>
-               <span> and </span><a href="https://omniscientjs.github.io/" target="_blank">Omnisicient</a>
+               <span> and </span><a href="https://github.com/Yomguithereal/baobab" target="_blank">Omnisicient</a>
             </p>
             <p>Created by: <a href="http://twitter.com/djidja8/" target="_blank">djidja8</a> ---
-               View on <a href="https://github.com/Srdjan/todo-omniscient">Github</a>
+               View on <a href="https://github.com/Srdjan/todo-baobab">Github</a>
             </p>
           </div>
         </footer>
       </div>
     )
+  }
 })
 
 //-- start
-app.start(() => React.render(<Main model={app.model()}/>, document.body))
+React.render(<Main/>, document.body)

@@ -1,11 +1,10 @@
 {
-  "name": "omniscent-todo",
+  "name": "react-baobab-todo-app",
   "version": "0.0.1",
   "description": "test",
   "main": "app.js",
   "dependencies": {
-    "immstruct": "^1.2.1",
-    "omniscient": "^2.1.0",
+    "baobab": "^0.2.2",
     "react": "^0.12.2"
   },
   "devDependencies": {
