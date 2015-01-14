@@ -24,7 +24,6 @@ var TodoList = React.createClass({
                                                         })
     this.cursors.root.edit({todos: updated})
   },
-
   renderTodo(todo) {
     return (
       <div className="view">
@@ -40,7 +39,6 @@ var TodoList = React.createClass({
       </div>
     )
   },
-
   render() {
     return (
         <section id="main">
@@ -61,7 +59,6 @@ var Main = React.createClass({
     root: ['root'],
     todos: ['root', 'todos']
   },
-
   onAdded(event) {
     if (event.key === 'Enter') {
       var val = this.refs.text.getDOMNode().value.trim()
@@ -71,12 +68,6 @@ var Main = React.createClass({
       }
     }
   },
-
-  clearCompleted() {
-    var pending = this.cursors.todos.get().filter(t => !t.done)
-    this.cursors.root.edit({todos: pending})
-  },
-
   render() {
     return (
       <div id="todoapp">
@@ -99,13 +90,16 @@ var Main = React.createClass({
             <li><a href="#/active"> Active </a></li>
             <li><a href="#/completed"> Completed </a></li>
           </ul>
-          <button id="clear-completed" onClick={this.clearCompleted}> Clear Completed </button>
+          <button id="clear-completed"
+                  onClick={this.cursors.root.edit({todos: this.cursors.todos.get().filter(t => !t.done)})}>
+                  Clear Completed
+          </button>
           <div id="info">
             <p>Using <a href="https://facebook.github.io/react/" target="_blank">ReactJS</a>
                <span> and </span><a href="https://github.com/Yomguithereal/baobab" target="_blank">Baobab</a>
             </p>
             <p>Created by: <a href="http://twitter.com/djidja8/" target="_blank">djidja8</a> ---
-               View on <a href="https://github.com/Srdjan/todo-baobab">Github</a>
+               View on <a href="https://github.com/Srdjan/react-baobab-todoapp">Github</a>
             </p>
           </div>
         </footer>
@@ -113,5 +107,4 @@ var Main = React.createClass({
     )
   }
 })
-
 React.render(<Main/>, document.body)
