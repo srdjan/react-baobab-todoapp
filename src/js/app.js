@@ -6,49 +6,33 @@ var React  = require('react')
 var Baobab = require('baobab')
 
 var nextId = 0
-var data = new Baobab({ todos: [{id: nextId++, checked: false, archived: false, text: 'Buy milk'}]})
+var data = new Baobab({ todos: [{id: (nextId++).toString(), done: false, archived: false, text: 'Buy milk'}]})
 var todosCursor = data.select('todos')
 
-//-- todo component
-var Todo = React.createClass({
-  mixins: [todosCursor.mixin],
-
-  onToggled() {
-    // this.props.todo.checked = !this.props.todo.checked
-  },
-  onDestroy() {
-    // this.props.todo.edit({'archived': true})
-  },
-  render() {
-    return (
-      <div key={this.props.todo.text} className="view">
-         <li id="todo-list" className={this.props.todo.checked && 'completed'}>
-          <input className="toggle"
-                 type="checkbox"
-                 onChange={this.onToggled}
-                 checked={this.props.todo.checked}/>
-          <label> {this.props.todo.text} </label>
-          <button className="destroy" onClick={this.onDestroy}/>
-        </li>
-      </div>
-    )
-  }
-})
-
-//-- todolist component
 var TodoList = React.createClass({
   mixins: [todosCursor.mixin],
 
-  onToggled() {
+  onAllToggled() {
     this.refs.toggleAll.checked = !this.refs.toggleAll.checked
-    this.cursor.get().forEach(i => i.update('checked', () => this.refs.toggleAll.checked))
+    // this.cursor.apply(todos => todos.set('done', this.refs.toggleAll.checked))
+    this.cursor.apply(todos => todos.map(t => t.done = this.refs.toggleAll.checked))
+
   },
 
   renderTodo(todo) {
     console.log(todo)
-    var todoCursor = todo.id ? todosCursor.select(todo.id.toString()) : {id: nextId++, checked: false, archived: false, text: '?'}
-    console.log(todoCursor)
-    return todo.archived ? '' : <Todo key={todo.id} todo={todoCursor}/>
+    return (
+      <div className="view">
+         <li key={todo.id} id="todo-list" className={todo.done && 'completed'}>
+          <input className="toggle"
+                 type="checkbox"
+                 onChange={() => this.cursor.select(todo.id).set('done', !todo.done)}
+                 done={todo.done}/>
+          <label> {todo.text} </label>
+          <button className="destroy" onClick={() => this.cursor.select(todo.id).set('archived', true)}/>
+        </li>
+      </div>
+    )
   },
 
   render() {
@@ -56,17 +40,16 @@ var TodoList = React.createClass({
         <section id="main">
           <input id="toggle-all" type="checkbox"
                                  checked={false}
-                                 onChange={this.onToggled}
+                                 onChange={this.onAllToggled}
                                  ref="toggleAll"/>
           <ul id="todo-list">
-            {this.cursor.get().map(this.renderTodo)}
+            {this.cursor.get().filter(todo => !todo.archived).map(this.renderTodo)}
           </ul>
         </section>
     )
   }
 })
 
-//-- main component
 var Main = React.createClass({
   mixins: [todosCursor.mixin],
 
@@ -74,17 +57,13 @@ var Main = React.createClass({
     if (event.key === 'Enter') {
       var val = this.refs.text.getDOMNode().value.trim()
       if (val) {
-        this.cursor.push({id: nextId++, checked: false, archived: false, text: val})
+        this.cursor.push({id: nextId++, done: false, archived: false, text: val})
         this.refs.text.getDOMNode().value = ''
       }
     }
   },
   clearCompleted() {
-    this.cursor.get().edit(todos => todos.filter(i => !i.get('checked')))
-  },
-  itemsLeft() {
-    // return this.cursor.get().count(i => !i.get('checked') && !i.get('archived'))
-    return 100
+    this.cursor.get().filter(todo => todo.done).map(t => this.cursor.unshift(t))
   },
 
   render() {
@@ -97,12 +76,10 @@ var Main = React.createClass({
                                            onKeyDown={this.onAdded}
                                            ref="text"/>
         </header>
-
         { <TodoList/> }
-
         <footer id="footer">
           <span id="todo-count">
-            <strong> {this.itemsLeft()} todos left </strong>
+            <strong> {this.cursor.get().filter(todo => !todo.done && !todo.archived).length} todos left </strong>
           </span>
           <ul id="filters">
             <li><a className="selected" href="#/"> All </a></li>
@@ -112,7 +89,7 @@ var Main = React.createClass({
           <button id="clear-completed" onClick={this.clearCompleted}> Clear Completed </button>
           <div id="info">
             <p>Using <a href="https://facebook.github.io/react/" target="_blank">ReactJS</a>
-               <span> and </span><a href="https://github.com/Yomguithereal/baobab" target="_blank">Omnisicient</a>
+               <span> and </span><a href="https://github.com/Yomguithereal/baobab" target="_blank">Baobab</a>
             </p>
             <p>Created by: <a href="http://twitter.com/djidja8/" target="_blank">djidja8</a> ---
                View on <a href="https://github.com/Srdjan/todo-baobab">Github</a>
@@ -124,5 +101,4 @@ var Main = React.createClass({
   }
 })
 
-//-- start
 React.render(<Main/>, document.body)
