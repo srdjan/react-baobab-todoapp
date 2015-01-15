@@ -17,11 +17,11 @@ var TodoList = React.createClass({
   },
   handleAllToggled() {
     this.refs.toggleAll.checked = !this.refs.toggleAll.checked
-    var updated = this.cursors.todos.get().map(t => t = { id: t.id,
+    var updated = this.cursors.todos.get().map(t => {return { id: t.id,
                                                           done: this.refs.toggleAll.checked,
                                                           archived: t.archived,
                                                           text: t.text
-                                                        })
+                                                        }})
     this.cursors.root.edit({todos: updated})
   },
   renderTodo(todo) {
